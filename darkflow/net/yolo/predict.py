@@ -6,6 +6,21 @@ import os
 import json
 from ...cython_utils.cy_yolo_findboxes import yolo_box_constructor
 
+def crop(image_path, coords, saved_location):
+    """
+    @param image_path: The path to the image to edit
+    @param coords: A tuple of x/y coordinates (x1, y1, x2, y2)
+    @param saved_location: Path to save the cropped image
+    """
+    image_obj = Image.open(image_path)
+    cropped_image = image_obj.crop(coords)
+    cropped_image.save(saved_location)
+    cropped_image.show()
+ 
+#if __name__ == '__main__':
+#    image = './data/frame0.jpg'
+#    crop(image, (161, 166, 706, 1050), 'cropped.jpg')
+
 def _fix(obj, dims, scale, offs):
 	for i in range(1, 5):
 		dim = dims[(i + 1) % 2]
@@ -33,6 +48,12 @@ def process_box(self, b, h, w, threshold):
 		if right > w - 1: right = w - 1
 		if top   < 0    :   top = 0
 		if bot   > h - 1:   bot = h - 1
+
+		print("left :"+str(left))
+		print("right:"+str(right))
+		print("top  :"+str(top))
+		print("bot  :"+str(bot))
+		print("---------------")
 		mess = '{}'.format(label)
 		return (left, right, top, bot, mess, max_indx, max_prob)
 	return None
@@ -78,6 +99,8 @@ def postprocess(self, net_out, im, save = True):
 	"""
 	Takes net output, draw predictions, save to disk
 	"""
+	print("postprocessing ... nice")
+
 	meta, FLAGS = self.meta, self.FLAGS
 	threshold = FLAGS.threshold
 	colors, labels = meta['colors'], meta['labels']
@@ -90,7 +113,10 @@ def postprocess(self, net_out, im, save = True):
 
 	h, w, _ = imgcv.shape
 	resultsForJSON = []
+	b_index = 0
 	for b in boxes:
+		print(""+str(b_index)+": "+str(b))
+		b_index = b_index+1
 		boxResults = self.process_box(b, h, w, threshold)
 		if boxResults is None:
 			continue
@@ -103,6 +129,10 @@ def postprocess(self, net_out, im, save = True):
 		cv2.rectangle(imgcv,
 			(left, top), (right, bot),
 			self.meta['colors'][max_indx], thick)
+		print("left  :"+str(left))
+		print("top   :"+str(top))
+		print("right :"+str(right))
+		print("bottom:"+str(bot))
 		cv2.putText(
 			imgcv, mess, (left, top - 12),
 			0, 1e-3 * h, self.meta['colors'][max_indx],

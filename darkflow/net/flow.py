@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import pickle
 from multiprocessing.pool import ThreadPool
+from PIL import Image
 
 train_stats = (
     'Training statistics: \n'
@@ -13,6 +14,25 @@ train_stats = (
     '\tBackup every  : {}'
 )
 pool = ThreadPool()
+
+#from PIL import Image
+ 
+def crop(image_path, coords, saved_location):
+    """
+    @param image_path: The path to the image to edit
+    @param coords: A tuple of x/y coordinates (x1, y1, x2, y2)
+    @param saved_location: Path to save the cropped image
+    """
+    image_obj = Image.open(image_path)
+    cropped_image = image_obj.crop(coords)
+    cropped_image.save(saved_location)
+    cropped_image.show()
+ 
+ 
+#if __name__ == '__main__':
+#    image = './data/frame0.jpg'
+#    crop(image, (161, 166, 706, 1050), 'cropped.jpg')
+
 
 def _save_ckpt(self, step, loss_profile):
     file = '{}-{}{}'
@@ -74,6 +94,7 @@ def train(self):
     if ckpt: _save_ckpt(self, *args)
 
 def return_predict(self, im):
+    #print("return_predict")    
     assert isinstance(im, np.ndarray), \
 				'Image is not a np.ndarray'
     h, w, _ = im.shape
@@ -104,6 +125,7 @@ def return_predict(self, im):
 import math
 
 def predict(self):
+    print("predict")
     inp_path = self.FLAGS.imgdir
     all_inps = os.listdir(inp_path)
     all_inps = [i for i in all_inps if self.framework.is_inp(i)]
@@ -121,6 +143,7 @@ def predict(self):
 
         # collect images input in the batch
         this_batch = all_inps[from_idx:to_idx]
+        #print("this_batch:"+str(this_batch))
         inp_feed = pool.map(lambda inp: (
             np.expand_dims(self.framework.preprocess(
                 os.path.join(inp_path, inp)), 0)), this_batch)
@@ -137,6 +160,7 @@ def predict(self):
         # Post processing
         self.say('Post processing {} inputs ...'.format(len(inp_feed)))
         start = time.time()
+        print("out: " + str(out))
         pool.map(lambda p: (lambda i, prediction:
             self.framework.postprocess(
                prediction, os.path.join(inp_path, this_batch[i])))(*p),

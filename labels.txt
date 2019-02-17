@@ -1,3 +1,4 @@
+person
 aeroplane
 bicycle
 bird
